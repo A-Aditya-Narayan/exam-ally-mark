@@ -31,18 +31,8 @@ const AuthForm = () => {
       const code = generateCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Store verification code in database
-      const { error: dbError } = await supabase
-        .from('email_verification_codes')
-        .insert({
-          email,
-          code,
-          expires_at: expiresAt.toISOString(),
-        });
-
-      if (dbError) throw dbError;
-
-      // Send email with magic code
+      // Send email with magic code directly without storing in database
+      // Since we don't have a user_id yet, we'll handle verification differently
       const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
         body: {
           type: 'verification',
@@ -52,6 +42,11 @@ const AuthForm = () => {
       });
 
       if (emailError) throw emailError;
+
+      // Store the code in session storage temporarily for verification
+      sessionStorage.setItem('magic_code', code);
+      sessionStorage.setItem('magic_code_email', email);
+      sessionStorage.setItem('magic_code_expires', expiresAt.toISOString());
 
       setCodeSent(true);
       toast({
@@ -74,35 +69,69 @@ const AuthForm = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
-        .from('email_verification_codes')
-        .select('*')
-        .eq('email', email)
-        .eq('code', magicCode)
-        .eq('verified', false)
-        .gt('expires_at', new Date().toISOString())
-        .single();
+      const storedCode = sessionStorage.getItem('magic_code');
+      const storedEmail = sessionStorage.getItem('magic_code_email');
+      const storedExpiry = sessionStorage.getItem('magic_code_expires');
 
-      if (error || !data) {
+      if (!storedCode || !storedEmail || !storedExpiry) {
         toast({
-          title: "Invalid Code",
-          description: "The magic code is invalid or has expired.",
+          title: "Error",
+          description: "No magic code found. Please request a new one.",
           variant: "destructive",
         });
         return;
       }
 
-      // Mark code as verified
-      await supabase
-        .from('email_verification_codes')
-        .update({ verified: true })
-        .eq('id', data.id);
+      if (new Date() > new Date(storedExpiry)) {
+        toast({
+          title: "Code Expired",
+          description: "The magic code has expired. Please request a new one.",
+          variant: "destructive",
+        });
+        // Clear expired code
+        sessionStorage.removeItem('magic_code');
+        sessionStorage.removeItem('magic_code_email');
+        sessionStorage.removeItem('magic_code_expires');
+        setCodeSent(false);
+        setMagicCode('');
+        return;
+      }
 
-      // Sign in the user with magic code (simulate successful authentication)
-      toast({
-        title: "Welcome!",
-        description: "You have successfully signed in with magic code.",
+      if (storedEmail !== email || storedCode !== magicCode) {
+        toast({
+          title: "Invalid Code",
+          description: "The magic code is invalid.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Check if user exists, if not create account
+      const { data: existingUser } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'temp_password_for_magic_code_check'
       });
+
+      if (!existingUser.user) {
+        // User doesn't exist, create account with magic code authentication
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const { error: signUpError } = await signUp(email, tempPassword, fullName || 'Magic Code User');
+        
+        if (signUpError) {
+          throw signUpError;
+        }
+      } else {
+        // User exists, sign them in
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in with magic code.",
+        });
+      }
+
+      // Clear stored code after successful verification
+      sessionStorage.removeItem('magic_code');
+      sessionStorage.removeItem('magic_code_email');
+      sessionStorage.removeItem('magic_code_expires');
 
       // Reset form
       setCodeSent(false);
