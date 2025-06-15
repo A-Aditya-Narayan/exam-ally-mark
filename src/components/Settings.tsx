@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Settings as SettingsIcon, Bell, BellOff } from "lucide-react";
+import { Settings as SettingsIcon, Bell, BellOff, LogOut } from "lucide-react";
 import { toast } from '@/hooks/use-toast';
 
 const Settings = () => {
@@ -36,6 +36,15 @@ const Settings = () => {
         ? "You will receive exam reminders and updates." 
         : "You won't receive any notifications.",
     });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    toast({
+      title: "Logged Out",
+      description: "You have been successfully logged out.",
+    });
+    window.location.href = '/auth';
   };
 
   return (
@@ -86,6 +95,17 @@ const Settings = () => {
               checked={notificationsEnabled}
               onCheckedChange={handleNotificationToggle}
             />
+          </div>
+
+          <div className="border-t pt-4">
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Logout
+            </Button>
           </div>
         </div>
         
