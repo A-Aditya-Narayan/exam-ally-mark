@@ -7,6 +7,7 @@ import ExamReminders from '@/components/ExamReminders';
 import MarkTracker from '@/components/MarkTracker';
 import AddExamDialog from '@/components/AddExamDialog';
 import AddMarkDialog from '@/components/AddMarkDialog';
+import Settings from '@/components/Settings';
 import { toast } from '@/hooks/use-toast';
 
 export interface Exam {
@@ -100,7 +101,12 @@ const Index = () => {
 
       <div className="container mx-auto p-6 relative z-10">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 relative">
+          {/* Settings button positioned in top right of header */}
+          <div className="absolute top-0 right-0">
+            <Settings />
+          </div>
+          
           <div className="flex justify-center items-center mb-4">
             <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
               <GraduationCap className="w-8 h-8 text-white" />
