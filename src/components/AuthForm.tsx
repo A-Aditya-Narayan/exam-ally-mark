@@ -31,8 +31,7 @@ const AuthForm = () => {
       const code = generateCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Send email with magic code directly without storing in database
-      // Since we don't have a user_id yet, we'll handle verification differently
+      // Send email with magic code
       const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
         body: {
           type: 'verification',
@@ -50,14 +49,14 @@ const AuthForm = () => {
 
       setCodeSent(true);
       toast({
-        title: "Magic Code Sent!",
-        description: "Check your email for a 6-digit magic code.",
+        title: "Secret Code Sent!",
+        description: "Check your email for a 6-digit secret code.",
       });
     } catch (error: any) {
-      console.error('Error sending magic code:', error);
+      console.error('Error sending secret code:', error);
       toast({
         title: "Error",
-        description: "Failed to send magic code. Please try again.",
+        description: "Failed to send secret code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -76,7 +75,7 @@ const AuthForm = () => {
       if (!storedCode || !storedEmail || !storedExpiry) {
         toast({
           title: "Error",
-          description: "No magic code found. Please request a new one.",
+          description: "No secret code found. Please request a new one.",
           variant: "destructive",
         });
         return;
@@ -85,7 +84,7 @@ const AuthForm = () => {
       if (new Date() > new Date(storedExpiry)) {
         toast({
           title: "Code Expired",
-          description: "The magic code has expired. Please request a new one.",
+          description: "The secret code has expired. Please request a new one.",
           variant: "destructive",
         });
         // Clear expired code
@@ -100,32 +99,31 @@ const AuthForm = () => {
       if (storedEmail !== email || storedCode !== magicCode) {
         toast({
           title: "Invalid Code",
-          description: "The magic code is invalid.",
+          description: "The secret code is invalid.",
           variant: "destructive",
         });
         return;
       }
 
-      // Check if user exists, if not create account
-      const { data: existingUser } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'temp_password_for_magic_code_check'
+      // Try to sign in with magic link (passwordless)
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          shouldCreateUser: true,
+          data: {
+            full_name: fullName || 'Secret Code User',
+          }
+        }
       });
 
-      if (!existingUser.user) {
-        // User doesn't exist, create account with magic code authentication
-        const tempPassword = Math.random().toString(36).slice(-8);
-        const { error: signUpError } = await signUp(email, tempPassword, fullName || 'Magic Code User');
-        
-        if (signUpError) {
-          throw signUpError;
-        }
-      } else {
-        // User exists, sign them in
+      if (error) {
+        console.error('Magic code sign in error:', error);
         toast({
-          title: "Welcome back!",
-          description: "You have successfully signed in with magic code.",
+          title: "Error",
+          description: "Failed to sign in with secret code. Please try again.",
+          variant: "destructive",
         });
+        return;
       }
 
       // Clear stored code after successful verification
@@ -133,15 +131,20 @@ const AuthForm = () => {
       sessionStorage.removeItem('magic_code_email');
       sessionStorage.removeItem('magic_code_expires');
 
+      toast({
+        title: "Success!",
+        description: "You have been signed in with the secret code.",
+      });
+
       // Reset form
       setCodeSent(false);
       setMagicCode('');
       setEmail('');
     } catch (error: any) {
-      console.error('Error verifying magic code:', error);
+      console.error('Error verifying secret code:', error);
       toast({
         title: "Error",
-        description: "Failed to verify magic code. Please try again.",
+        description: "Failed to verify secret code. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -153,7 +156,7 @@ const AuthForm = () => {
     e.preventDefault();
     setLoading(true);
 
-    console.log(`Attempting ${isMagicCode ? 'magic code' : (isLogin ? 'login' : 'signup')} with email:`, email);
+    console.log(`Attempting ${isMagicCode ? 'secret code' : (isLogin ? 'login' : 'signup')} with email:`, email);
 
     try {
       if (isMagicCode) {
@@ -216,18 +219,18 @@ const AuthForm = () => {
   };
 
   const getFormTitle = () => {
-    if (isMagicCode) return codeSent ? 'Enter Magic Code' : 'Magic Code Sign In';
+    if (isMagicCode) return codeSent ? 'Enter Secret Code' : 'Secret Code Sign In';
     return isLogin ? 'Welcome Back' : 'Join ExamAlly';
   };
 
   const getFormDescription = () => {
-    if (isMagicCode) return codeSent ? 'Enter the 6-digit code sent to your email' : 'Enter your email to receive a magic code';
+    if (isMagicCode) return codeSent ? 'Enter the 6-digit code sent to your email' : 'Enter your email to receive a secret code';
     return isLogin ? 'Sign in to your account' : 'Create your account to get started';
   };
 
   const getButtonText = () => {
     if (loading) return 'Processing...';
-    if (isMagicCode) return codeSent ? 'Verify Code' : 'Send Magic Code';
+    if (isMagicCode) return codeSent ? 'Verify Code' : 'Send Secret Code';
     return isLogin ? 'Sign In' : 'Sign Up';
   };
 
@@ -280,7 +283,7 @@ const AuthForm = () => {
               className="flex-1 gap-2"
             >
               <Shield className="w-4 h-4" />
-              Magic Code
+              Secret Code
             </Button>
           </div>
 
@@ -344,7 +347,7 @@ const AuthForm = () => {
               <div className="space-y-2">
                 <Label htmlFor="magicCode" className="flex items-center gap-2">
                   <Shield className="w-4 h-4" />
-                  Magic Code
+                  Secret Code
                 </Label>
                 <div className="flex justify-center">
                   <InputOTP
