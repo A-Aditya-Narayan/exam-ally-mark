@@ -8,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import AppHeader from '@/components/AppHeader';
 import AppNavigation from '@/components/AppNavigation';
 import DashboardContent from '@/components/DashboardContent';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export interface Exam {
   id: string;
@@ -35,6 +36,7 @@ const Index = () => {
   const [marks, setMarks] = useState<Mark[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'exams' | 'marks'>('dashboard');
   const { user } = useAuth();
+  const { sendExamReminderEmail, sendMarkUpdateEmail, checkNotificationSettings, getVerifiedEmail } = useNotifications();
 
   useEffect(() => {
     if (user) {
@@ -135,6 +137,15 @@ const Index = () => {
       };
       
       setExams(prev => [...prev, mappedExam]);
+      
+      // Send email notification if enabled
+      const settings = await checkNotificationSettings();
+      const verifiedEmail = await getVerifiedEmail();
+      
+      if (settings?.email_notifications && settings?.exam_reminders && verifiedEmail) {
+        await sendExamReminderEmail(mappedExam, verifiedEmail);
+      }
+      
       toast({
         title: "Exam Added",
         description: `${exam.subject} exam has been scheduled.`,
@@ -188,6 +199,15 @@ const Index = () => {
       };
       
       setMarks(prev => [...prev, mappedMark]);
+      
+      // Send email notification if enabled
+      const settings = await checkNotificationSettings();
+      const verifiedEmail = await getVerifiedEmail();
+      
+      if (settings?.email_notifications && settings?.mark_updates && verifiedEmail) {
+        await sendMarkUpdateEmail(mappedMark, verifiedEmail);
+      }
+      
       toast({
         title: "Mark Added",
         description: `${mark.subject} mark has been recorded.`,

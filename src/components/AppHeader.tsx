@@ -1,28 +1,31 @@
 
 import React from 'react';
-import { GraduationCap } from "lucide-react";
-import Settings from '@/components/Settings';
+import { GraduationCap } from 'lucide-react';
 import LogoutButton from '@/components/LogoutButton';
+import Settings from '@/components/Settings';
+import EmailVerification from '@/components/EmailVerification';
+import NotificationSettings from '@/components/NotificationSettings';
 
 const AppHeader = () => {
   return (
-    <div className="text-center mb-12 relative">
-      {/* Settings and Logout buttons positioned in top right of header */}
-      <div className="absolute top-0 right-0 flex gap-2">
-        <Settings />
-        <LogoutButton />
-      </div>
-      
-      <div className="flex justify-center items-center mb-4">
+    <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center space-x-3">
         <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
           <GraduationCap className="w-8 h-8 text-white" />
         </div>
+        <div>
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+            ExamAlly
+          </h1>
+          <p className="text-gray-600 text-lg">Your ultimate exam companion</p>
+        </div>
       </div>
-      <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-        ExamAlly
-      </h1>
-      <p className="text-gray-600 text-lg font-medium">Your intelligent companion for academic excellence</p>
-      <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
+      <div className="flex items-center space-x-4">
+        <EmailVerification />
+        <NotificationSettings />
+        <Settings />
+        <LogoutButton />
+      </div>
     </div>
   );
 };
