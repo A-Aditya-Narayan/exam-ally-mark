@@ -8,6 +8,9 @@ import MarkTracker from '@/components/MarkTracker';
 import AddExamDialog from '@/components/AddExamDialog';
 import AddMarkDialog from '@/components/AddMarkDialog';
 import Settings from '@/components/Settings';
+import LogoutButton from '@/components/LogoutButton';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export interface Exam {
@@ -17,6 +20,7 @@ export interface Exam {
   time: string;
   location: string;
   description?: string;
+  user_id?: string;
 }
 
 export interface Mark {
@@ -27,47 +31,86 @@ export interface Mark {
   totalMarks: number;
   date: string;
   grade?: string;
+  user_id?: string;
 }
 
 const Index = () => {
   const [exams, setExams] = useState<Exam[]>([]);
   const [marks, setMarks] = useState<Mark[]>([]);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'exams' | 'marks'>('dashboard');
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Load data from localStorage
-    const savedExams = localStorage.getItem('school-exams');
-    const savedMarks = localStorage.getItem('school-marks');
-    
-    if (savedExams) {
-      setExams(JSON.parse(savedExams));
+    if (user) {
+      fetchExams();
+      fetchMarks();
     }
-    if (savedMarks) {
-      setMarks(JSON.parse(savedMarks));
+  }, [user]);
+
+  const fetchExams = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('exams')
+        .select('*')
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      setExams(data || []);
+    } catch (error) {
+      console.error('Error fetching exams:', error);
+      // Fallback to localStorage for existing data
+      const savedExams = localStorage.getItem('school-exams');
+      if (savedExams) {
+        setExams(JSON.parse(savedExams));
+      }
     }
-  }, []);
-
-  const saveExams = (newExams: Exam[]) => {
-    setExams(newExams);
-    localStorage.setItem('school-exams', JSON.stringify(newExams));
   };
 
-  const saveMarks = (newMarks: Mark[]) => {
-    setMarks(newMarks);
-    localStorage.setItem('school-marks', JSON.stringify(newMarks));
+  const fetchMarks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('marks')
+        .select('*')
+        .eq('user_id', user?.id);
+      
+      if (error) throw error;
+      setMarks(data || []);
+    } catch (error) {
+      console.error('Error fetching marks:', error);
+      // Fallback to localStorage for existing data
+      const savedMarks = localStorage.getItem('school-marks');
+      if (savedMarks) {
+        setMarks(JSON.parse(savedMarks));
+      }
+    }
   };
 
-  const addExam = (exam: Omit<Exam, 'id'>) => {
-    const newExam = { ...exam, id: Date.now().toString() };
-    const newExams = [...exams, newExam];
-    saveExams(newExams);
-    toast({
-      title: "Exam Added",
-      description: `${exam.subject} exam has been scheduled.`,
-    });
+  const addExam = async (exam: Omit<Exam, 'id'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('exams')
+        .insert([{ ...exam, user_id: user?.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setExams(prev => [...prev, data]);
+      toast({
+        title: "Exam Added",
+        description: `${exam.subject} exam has been scheduled.`,
+      });
+    } catch (error) {
+      console.error('Error adding exam:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add exam. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const addMark = (mark: Omit<Mark, 'id' | 'grade'>) => {
+  const addMark = async (mark: Omit<Mark, 'id' | 'grade'>) => {
     const percentage = (mark.marks / mark.totalMarks) * 100;
     let grade = 'F';
     if (percentage >= 90) grade = 'A+';
@@ -76,13 +119,28 @@ const Index = () => {
     else if (percentage >= 60) grade = 'C';
     else if (percentage >= 50) grade = 'D';
 
-    const newMark = { ...mark, id: Date.now().toString(), grade };
-    const newMarks = [...marks, newMark];
-    saveMarks(newMarks);
-    toast({
-      title: "Mark Added",
-      description: `${mark.subject} mark has been recorded.`,
-    });
+    try {
+      const { data, error } = await supabase
+        .from('marks')
+        .insert([{ ...mark, grade, user_id: user?.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setMarks(prev => [...prev, data]);
+      toast({
+        title: "Mark Added",
+        description: `${mark.subject} mark has been recorded.`,
+      });
+    } catch (error) {
+      console.error('Error adding mark:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add mark. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const upcomingExams = exams.filter(exam => new Date(exam.date) >= new Date()).length;
@@ -102,9 +160,10 @@ const Index = () => {
       <div className="container mx-auto p-6 relative z-10">
         {/* Header */}
         <div className="text-center mb-12 relative">
-          {/* Settings button positioned in top right of header */}
-          <div className="absolute top-0 right-0">
+          {/* Settings and Logout buttons positioned in top right of header */}
+          <div className="absolute top-0 right-0 flex gap-2">
             <Settings />
+            <LogoutButton />
           </div>
           
           <div className="flex justify-center items-center mb-4">
