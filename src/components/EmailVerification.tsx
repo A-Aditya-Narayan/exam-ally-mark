@@ -40,6 +40,7 @@ const EmailVerification = () => {
     try {
       const code = generateCode();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const placeholderUserId = crypto.randomUUID(); // Generate a placeholder user ID
 
       // Store verification code in database
       const { error: dbError } = await supabase
@@ -48,6 +49,7 @@ const EmailVerification = () => {
           email,
           code,
           expires_at: expiresAt.toISOString(),
+          user_id: placeholderUserId,
         });
 
       if (dbError) throw dbError;
