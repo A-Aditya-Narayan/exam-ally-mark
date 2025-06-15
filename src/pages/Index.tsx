@@ -55,7 +55,19 @@ const Index = () => {
         .eq('user_id', user?.id);
       
       if (error) throw error;
-      setExams(data || []);
+      
+      // Map database fields to component interface
+      const mappedExams = (data || []).map(exam => ({
+        id: exam.id,
+        subject: exam.subject,
+        date: exam.date,
+        time: exam.time,
+        location: exam.location,
+        description: exam.description,
+        user_id: exam.user_id
+      }));
+      
+      setExams(mappedExams);
     } catch (error) {
       console.error('Error fetching exams:', error);
       // Fallback to localStorage for existing data
@@ -74,7 +86,20 @@ const Index = () => {
         .eq('user_id', user?.id);
       
       if (error) throw error;
-      setMarks(data || []);
+      
+      // Map database fields to component interface
+      const mappedMarks = (data || []).map(mark => ({
+        id: mark.id,
+        subject: mark.subject,
+        examType: mark.exam_type,
+        marks: mark.marks,
+        totalMarks: mark.total_marks,
+        date: mark.date,
+        grade: mark.grade,
+        user_id: mark.user_id
+      }));
+      
+      setMarks(mappedMarks);
     } catch (error) {
       console.error('Error fetching marks:', error);
       // Fallback to localStorage for existing data
@@ -89,13 +114,31 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from('exams')
-        .insert([{ ...exam, user_id: user?.id }])
+        .insert([{ 
+          subject: exam.subject,
+          date: exam.date,
+          time: exam.time,
+          location: exam.location,
+          description: exam.description,
+          user_id: user?.id 
+        }])
         .select()
         .single();
 
       if (error) throw error;
       
-      setExams(prev => [...prev, data]);
+      // Map the response back to the component interface
+      const mappedExam = {
+        id: data.id,
+        subject: data.subject,
+        date: data.date,
+        time: data.time,
+        location: data.location,
+        description: data.description,
+        user_id: data.user_id
+      };
+      
+      setExams(prev => [...prev, mappedExam]);
       toast({
         title: "Exam Added",
         description: `${exam.subject} exam has been scheduled.`,
@@ -122,13 +165,33 @@ const Index = () => {
     try {
       const { data, error } = await supabase
         .from('marks')
-        .insert([{ ...mark, grade, user_id: user?.id }])
+        .insert([{ 
+          subject: mark.subject,
+          exam_type: mark.examType,
+          marks: mark.marks,
+          total_marks: mark.totalMarks,
+          date: mark.date,
+          grade,
+          user_id: user?.id 
+        }])
         .select()
         .single();
 
       if (error) throw error;
       
-      setMarks(prev => [...prev, data]);
+      // Map the response back to the component interface
+      const mappedMark = {
+        id: data.id,
+        subject: data.subject,
+        examType: data.exam_type,
+        marks: data.marks,
+        totalMarks: data.total_marks,
+        date: data.date,
+        grade: data.grade,
+        user_id: data.user_id
+      };
+      
+      setMarks(prev => [...prev, mappedMark]);
       toast({
         title: "Mark Added",
         description: `${mark.subject} mark has been recorded.`,
