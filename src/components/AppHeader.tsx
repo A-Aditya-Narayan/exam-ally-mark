@@ -1,10 +1,8 @@
 
 import React from 'react';
 import { GraduationCap } from 'lucide-react';
-import LogoutButton from '@/components/LogoutButton';
-import Settings from '@/components/Settings';
 import EmailVerification from '@/components/EmailVerification';
-import NotificationSettings from '@/components/NotificationSettings';
+import Settings from '@/components/Settings';
 
 const AppHeader = () => {
   return (
@@ -22,9 +20,7 @@ const AppHeader = () => {
       </div>
       <div className="flex items-center space-x-4">
         <EmailVerification />
-        <NotificationSettings />
         <Settings />
-        <LogoutButton />
       </div>
     </div>
   );

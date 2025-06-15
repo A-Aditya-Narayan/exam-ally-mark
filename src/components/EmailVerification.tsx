@@ -12,7 +12,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Mail, Shield } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -22,7 +21,6 @@ const EmailVerification = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
 
   const generateCode = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -47,7 +45,6 @@ const EmailVerification = () => {
       const { error: dbError } = await supabase
         .from('email_verification_codes')
         .insert({
-          user_id: user?.id,
           email,
           code,
           expires_at: expiresAt.toISOString(),
@@ -98,7 +95,6 @@ const EmailVerification = () => {
       const { data, error } = await supabase
         .from('email_verification_codes')
         .select('*')
-        .eq('user_id', user?.id)
         .eq('email', email)
         .eq('code', verificationCode)
         .eq('verified', false)
@@ -121,18 +117,6 @@ const EmailVerification = () => {
         .eq('id', data.id);
 
       if (updateError) throw updateError;
-
-      // Create or update notification settings
-      const { error: settingsError } = await supabase
-        .from('notification_settings')
-        .upsert({
-          user_id: user?.id,
-          email_notifications: true,
-          exam_reminders: true,
-          mark_updates: true,
-        });
-
-      if (settingsError) throw settingsError;
 
       toast({
         title: "Email Verified",
