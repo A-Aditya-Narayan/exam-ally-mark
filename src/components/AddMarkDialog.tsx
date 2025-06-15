@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Plus } from "lucide-react";
+import { FileText, Plus, Trophy } from "lucide-react";
 import type { Mark } from '@/pages/Index';
 
 interface AddMarkDialogProps {
@@ -71,39 +71,43 @@ const AddMarkDialog = ({ onAddMark }: AddMarkDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-green-600 hover:bg-green-700">
+        <Button className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 rounded-xl">
           <Plus className="w-4 h-4 mr-2" />
           Add Mark
+          <Trophy className="w-4 h-4 ml-2" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-white/95 backdrop-blur-lg border border-white/20 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center text-green-600">
-            <FileText className="w-5 h-5 mr-2" />
+          <DialogTitle className="flex items-center text-green-600 text-xl">
+            <div className="p-2 rounded-full bg-green-100 mr-3">
+              <FileText className="w-5 h-5" />
+            </div>
             Record Exam Result
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-gray-600">
             Add your exam marks to track your academic performance.
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-2">
-            <Label htmlFor="subject">Subject *</Label>
+            <Label htmlFor="subject" className="text-sm font-semibold text-gray-700">Subject *</Label>
             <Input
               id="subject"
               name="subject"
               value={formData.subject}
               onChange={handleChange}
               placeholder="e.g., Mathematics, Physics, History"
+              className="rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500/20"
               required
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="examType">Exam Type *</Label>
+            <Label htmlFor="examType" className="text-sm font-semibold text-gray-700">Exam Type *</Label>
             <Select onValueChange={(value) => handleSelectChange('examType', value)} value={formData.examType}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500/20">
                 <SelectValue placeholder="Select exam type" />
               </SelectTrigger>
               <SelectContent>
@@ -121,7 +125,7 @@ const AddMarkDialog = ({ onAddMark }: AddMarkDialogProps) => {
           
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="marks">Marks Obtained *</Label>
+              <Label htmlFor="marks" className="text-sm font-semibold text-gray-700">Marks Obtained *</Label>
               <Input
                 id="marks"
                 name="marks"
@@ -130,12 +134,13 @@ const AddMarkDialog = ({ onAddMark }: AddMarkDialogProps) => {
                 value={formData.marks}
                 onChange={handleChange}
                 placeholder="85"
+                className="rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500/20"
                 required
               />
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="totalMarks">Total Marks *</Label>
+              <Label htmlFor="totalMarks" className="text-sm font-semibold text-gray-700">Total Marks *</Label>
               <Input
                 id="totalMarks"
                 name="totalMarks"
@@ -144,28 +149,38 @@ const AddMarkDialog = ({ onAddMark }: AddMarkDialogProps) => {
                 value={formData.totalMarks}
                 onChange={handleChange}
                 placeholder="100"
+                className="rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500/20"
                 required
               />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="date">Exam Date *</Label>
+            <Label htmlFor="date" className="text-sm font-semibold text-gray-700">Exam Date *</Label>
             <Input
               id="date"
               name="date"
               type="date"
               value={formData.date}
               onChange={handleChange}
+              className="rounded-lg border-gray-200 focus:border-green-500 focus:ring-green-500/20"
               required
             />
           </div>
           
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setOpen(false)}
+              className="rounded-lg border-gray-300 hover:bg-gray-50"
+            >
               Cancel
             </Button>
-            <Button type="submit" className="bg-green-600 hover:bg-green-700">
+            <Button 
+              type="submit" 
+              className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300"
+            >
               Add Mark
             </Button>
           </div>

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Calendar, Clock, FileText } from "lucide-react";
+import { BookOpen, Calendar, Clock, FileText, GraduationCap, TrendingUp } from "lucide-react";
 import ExamReminders from '@/components/ExamReminders';
 import MarkTracker from '@/components/MarkTracker';
 import AddExamDialog from '@/components/AddExamDialog';
@@ -90,23 +90,40 @@ const Index = () => {
     : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-to-r from-blue-300/20 to-purple-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-60 right-20 w-96 h-96 bg-gradient-to-r from-indigo-300/20 to-pink-300/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-20 left-40 w-80 h-80 bg-gradient-to-r from-emerald-300/20 to-blue-300/20 rounded-full blur-3xl"></div>
+      </div>
+
+      <div className="container mx-auto p-6 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        <div className="text-center mb-12">
+          <div className="flex justify-center items-center mb-4">
+            <div className="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 shadow-lg">
+              <GraduationCap className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             ExamAlly
           </h1>
-          <p className="text-gray-600">Your personal exam reminder and mark tracker</p>
+          <p className="text-gray-600 text-lg font-medium">Your intelligent companion for academic excellence</p>
+          <div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-purple-500 mx-auto mt-4 rounded-full"></div>
         </div>
 
         {/* Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-lg p-1 shadow-lg">
+        <div className="flex justify-center mb-12">
+          <div className="bg-white/80 backdrop-blur-lg rounded-2xl p-2 shadow-xl border border-white/20">
             <Button
               variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('dashboard')}
-              className="mx-1"
+              className={`mx-1 rounded-xl transition-all duration-300 ${
+                activeTab === 'dashboard' 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105' 
+                  : 'hover:bg-gray-100 hover:scale-105'
+              }`}
             >
               <BookOpen className="w-4 h-4 mr-2" />
               Dashboard
@@ -114,7 +131,11 @@ const Index = () => {
             <Button
               variant={activeTab === 'exams' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('exams')}
-              className="mx-1"
+              className={`mx-1 rounded-xl transition-all duration-300 ${
+                activeTab === 'exams' 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105' 
+                  : 'hover:bg-gray-100 hover:scale-105'
+              }`}
             >
               <Calendar className="w-4 h-4 mr-2" />
               Exams
@@ -122,7 +143,11 @@ const Index = () => {
             <Button
               variant={activeTab === 'marks' ? 'default' : 'ghost'}
               onClick={() => setActiveTab('marks')}
-              className="mx-1"
+              className={`mx-1 rounded-xl transition-all duration-300 ${
+                activeTab === 'marks' 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg scale-105' 
+                  : 'hover:bg-gray-100 hover:scale-105'
+              }`}
             >
               <FileText className="w-4 h-4 mr-2" />
               Marks
@@ -132,44 +157,53 @@ const Index = () => {
 
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-2">
+              <Card className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="pb-2 relative z-10">
                   <CardTitle className="text-lg font-medium flex items-center">
-                    <Calendar className="w-5 h-5 mr-2" />
+                    <div className="p-2 rounded-full bg-white/20 mr-3">
+                      <Calendar className="w-5 h-5" />
+                    </div>
                     Upcoming Exams
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{upcomingExams}</div>
+                <CardContent className="relative z-10">
+                  <div className="text-4xl font-bold mb-2">{upcomingExams}</div>
                   <p className="text-blue-100">exams scheduled</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-2">
+              <Card className="bg-gradient-to-br from-emerald-500 via-green-600 to-teal-700 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="pb-2 relative z-10">
                   <CardTitle className="text-lg font-medium flex items-center">
-                    <FileText className="w-5 h-5 mr-2" />
+                    <div className="p-2 rounded-full bg-white/20 mr-3">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
                     Average Grade
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{averageGrade}%</div>
+                <CardContent className="relative z-10">
+                  <div className="text-4xl font-bold mb-2">{averageGrade}%</div>
                   <p className="text-green-100">overall performance</p>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader className="pb-2">
+              <Card className="bg-gradient-to-br from-purple-500 via-indigo-600 to-purple-700 text-white border-0 shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="pb-2 relative z-10">
                   <CardTitle className="text-lg font-medium flex items-center">
-                    <BookOpen className="w-5 h-5 mr-2" />
+                    <div className="p-2 rounded-full bg-white/20 mr-3">
+                      <BookOpen className="w-5 h-5" />
+                    </div>
                     Total Subjects
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
+                <CardContent className="relative z-10">
+                  <div className="text-4xl font-bold mb-2">
                     {new Set([...exams.map(e => e.subject), ...marks.map(m => m.subject)]).size}
                   </div>
                   <p className="text-purple-100">subjects tracked</p>
@@ -179,28 +213,34 @@ const Index = () => {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader>
+              <Card className="bg-white/80 backdrop-blur-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border border-white/20 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="relative z-10">
                   <CardTitle className="flex items-center text-blue-600">
-                    <Calendar className="w-5 h-5 mr-2" />
+                    <div className="p-2 rounded-full bg-blue-100 mr-3">
+                      <Calendar className="w-5 h-5" />
+                    </div>
                     Quick Add Exam
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">Schedule a new exam reminder</p>
+                <CardContent className="relative z-10">
+                  <p className="text-gray-600 mb-6">Schedule a new exam reminder with all the important details</p>
                   <AddExamDialog onAddExam={addExam} />
                 </CardContent>
               </Card>
 
-              <Card className="bg-white shadow-lg hover:shadow-xl transition-shadow">
-                <CardHeader>
+              <Card className="bg-white/80 backdrop-blur-lg shadow-2xl hover:shadow-3xl transition-all duration-300 hover:scale-105 border border-white/20 relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardHeader className="relative z-10">
                   <CardTitle className="flex items-center text-green-600">
-                    <FileText className="w-5 h-5 mr-2" />
+                    <div className="p-2 rounded-full bg-green-100 mr-3">
+                      <FileText className="w-5 h-5" />
+                    </div>
                     Record Marks
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4">Add your latest exam results</p>
+                <CardContent className="relative z-10">
+                  <p className="text-gray-600 mb-6">Add your latest exam results and track your progress</p>
                   <AddMarkDialog onAddMark={addMark} />
                 </CardContent>
               </Card>
