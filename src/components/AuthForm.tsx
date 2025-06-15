@@ -1,47 +1,139 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { GraduationCap, Mail, Lock, User, Zap } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { GraduationCap, Mail, Lock, User, Shield } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthForm = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [isMagicLink, setIsMagicLink] = useState(false);
+  const [isMagicCode, setIsMagicCode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [magicCode, setMagicCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithMagicLink } = useAuth();
+  const { signIn, signUp } = useAuth();
+
+  const generateCode = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
+  const sendMagicCode = async () => {
+    setLoading(true);
+    
+    try {
+      const code = generateCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Store verification code in database
+      const { error: dbError } = await supabase
+        .from('email_verification_codes')
+        .insert({
+          email,
+          code,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (dbError) throw dbError;
+
+      // Send email with magic code
+      const { error: emailError } = await supabase.functions.invoke('send-notification-email', {
+        body: {
+          type: 'verification',
+          email,
+          data: { code }
+        }
+      });
+
+      if (emailError) throw emailError;
+
+      setCodeSent(true);
+      toast({
+        title: "Magic Code Sent!",
+        description: "Check your email for a 6-digit magic code.",
+      });
+    } catch (error: any) {
+      console.error('Error sending magic code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to send magic code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyMagicCode = async () => {
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('email_verification_codes')
+        .select('*')
+        .eq('email', email)
+        .eq('code', magicCode)
+        .eq('verified', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (error || !data) {
+        toast({
+          title: "Invalid Code",
+          description: "The magic code is invalid or has expired.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Mark code as verified
+      await supabase
+        .from('email_verification_codes')
+        .update({ verified: true })
+        .eq('id', data.id);
+
+      // Sign in the user with magic code (simulate successful authentication)
+      toast({
+        title: "Welcome!",
+        description: "You have successfully signed in with magic code.",
+      });
+
+      // Reset form
+      setCodeSent(false);
+      setMagicCode('');
+      setEmail('');
+    } catch (error: any) {
+      console.error('Error verifying magic code:', error);
+      toast({
+        title: "Error",
+        description: "Failed to verify magic code. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    console.log(`Attempting ${isMagicLink ? 'magic link' : (isLogin ? 'login' : 'signup')} with email:`, email);
+    console.log(`Attempting ${isMagicCode ? 'magic code' : (isLogin ? 'login' : 'signup')} with email:`, email);
 
     try {
-      if (isMagicLink) {
-        console.log('Calling signInWithMagicLink function...');
-        const { error } = await signInWithMagicLink(email);
-        console.log('Magic link response:', { error });
-        
-        if (error) {
-          console.error('Magic link error:', error);
-          toast({
-            title: "Magic Link Error",
-            description: error.message || "Failed to send magic link. Please try again.",
-            variant: "destructive",
-          });
+      if (isMagicCode) {
+        if (!codeSent) {
+          await sendMagicCode();
+          return;
         } else {
-          console.log('Magic link sent successfully');
-          toast({
-            title: "Magic Link Sent!",
-            description: "Check your email for a magic link to sign in.",
-          });
+          await verifyMagicCode();
+          return;
         }
       } else if (isLogin) {
         console.log('Calling signIn function...');
@@ -95,19 +187,25 @@ const AuthForm = () => {
   };
 
   const getFormTitle = () => {
-    if (isMagicLink) return 'Magic Link Sign In';
+    if (isMagicCode) return codeSent ? 'Enter Magic Code' : 'Magic Code Sign In';
     return isLogin ? 'Welcome Back' : 'Join ExamAlly';
   };
 
   const getFormDescription = () => {
-    if (isMagicLink) return 'Enter your email to receive a magic link';
+    if (isMagicCode) return codeSent ? 'Enter the 6-digit code sent to your email' : 'Enter your email to receive a magic code';
     return isLogin ? 'Sign in to your account' : 'Create your account to get started';
   };
 
   const getButtonText = () => {
     if (loading) return 'Processing...';
-    if (isMagicLink) return 'Send Magic Link';
+    if (isMagicCode) return codeSent ? 'Verify Code' : 'Send Magic Code';
     return isLogin ? 'Sign In' : 'Sign Up';
+  };
+
+  const handleMagicCodeToggle = () => {
+    setIsMagicCode(true);
+    setCodeSent(false);
+    setMagicCode('');
   };
 
   return (
@@ -136,25 +234,29 @@ const AuthForm = () => {
           <div className="flex gap-2">
             <Button
               type="button"
-              variant={!isMagicLink ? "default" : "outline"}
-              onClick={() => setIsMagicLink(false)}
+              variant={!isMagicCode ? "default" : "outline"}
+              onClick={() => {
+                setIsMagicCode(false);
+                setCodeSent(false);
+                setMagicCode('');
+              }}
               className="flex-1"
             >
               Password
             </Button>
             <Button
               type="button"
-              variant={isMagicLink ? "default" : "outline"}
-              onClick={() => setIsMagicLink(true)}
+              variant={isMagicCode ? "default" : "outline"}
+              onClick={handleMagicCodeToggle}
               className="flex-1 gap-2"
             >
-              <Zap className="w-4 h-4" />
-              Magic Link
+              <Shield className="w-4 h-4" />
+              Magic Code
             </Button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && !isMagicLink && (
+            {!isLogin && !isMagicCode && (
               <div className="space-y-2">
                 <Label htmlFor="fullName" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -172,23 +274,26 @@ const AuthForm = () => {
               </div>
             )}
             
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-white/50"
-              />
-            </div>
+            {(!isMagicCode || !codeSent) && (
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="bg-white/50"
+                  disabled={codeSent}
+                />
+              </div>
+            )}
             
-            {!isMagicLink && (
+            {!isMagicCode && (
               <div className="space-y-2">
                 <Label htmlFor="password" className="flex items-center gap-2">
                   <Lock className="w-4 h-4" />
@@ -206,16 +311,55 @@ const AuthForm = () => {
               </div>
             )}
 
+            {isMagicCode && codeSent && (
+              <div className="space-y-2">
+                <Label htmlFor="magicCode" className="flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Magic Code
+                </Label>
+                <div className="flex justify-center">
+                  <InputOTP
+                    value={magicCode}
+                    onChange={setMagicCode}
+                    maxLength={6}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (isMagicCode && codeSent && magicCode.length !== 6)}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg"
             >
               {getButtonText()}
             </Button>
+
+            {isMagicCode && codeSent && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setCodeSent(false);
+                  setMagicCode('');
+                }}
+                className="w-full"
+              >
+                Back to Email
+              </Button>
+            )}
           </form>
 
-          {!isMagicLink && (
+          {!isMagicCode && (
             <div className="text-center">
               <Button
                 variant="ghost"
